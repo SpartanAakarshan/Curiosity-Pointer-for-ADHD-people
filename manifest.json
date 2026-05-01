@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Curiosity Pointer",
+  "version": "1.0",
+  "description": "Alt+Click any heading for a 2-sentence AI summary. Stay focused.",
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}
