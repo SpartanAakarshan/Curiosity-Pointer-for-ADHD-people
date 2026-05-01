@@ -1,5 +1,5 @@
-const SUPABASE_URL  = 'REPLACE_WITH_SUPABASE_URL';
-const SUPABASE_ANON = 'REPLACE_WITH_SUPABASE_ANON_KEY';
+const SUPABASE_URL  = 'https://krirwdkqjezbzyythioq.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_FjoiQluqAIe3hl3ufdWfaA_BJGr7e5b';
 
 const status    = document.getElementById('status');
 const loggedIn  = document.getElementById('logged-in');
