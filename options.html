@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curiosity Pointer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #03030f;
+      color: #b8b8ff;
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 360px;
+      border: 1px solid #4a4aff;
+      padding: 28px;
+      box-shadow: 0 0 16px rgba(80,80,255,0.3), 0 0 40px rgba(50,50,200,0.1);
+    }
+
+    .title {
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: #6666ff;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #1e1e6e;
+      padding-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: #5555cc;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      background: #000008;
+      border: 1px solid #2a2a88;
+      color: #b8b8ff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      padding: 8px 10px;
+      margin-bottom: 16px;
+      outline: none;
+    }
+
+    input:focus { border-color: #4a4aff; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+
+    button {
+      flex: 1;
+      background: none;
+      border: 1px solid #4a4aff;
+      color: #6666ff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 9px;
+      cursor: pointer;
+    }
+
+    button:hover { background: #111144; color: #ffffff; }
+    button.primary { background: #1a1a6e; color: #b8b8ff; border-color: #6666ff; }
+    button.primary:hover { background: #2a2a99; }
+    button.danger { border-color: #aa2222; color: #cc4444; }
+    button.danger:hover { background: #2a0808; }
+
+    #status {
+      font-size: 11px;
+      margin-top: 16px;
+      min-height: 16px;
+      letter-spacing: 0.05em;
+    }
+
+    .ok { color: #44aa44; }
+    .err { color: #cc4444; }
+
+    #logged-in { display: none; }
+    #logged-out { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">Curiosity Pointer // Auth</div>
+
+    <div id="logged-out">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="user@example.com" />
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" />
+      <div class="btn-row">
+        <button class="primary" id="btn-login">Login</button>
+        <button id="btn-signup">Sign Up</button>
+      </div>
+    </div>
+
+    <div id="logged-in">
+      <div id="user-email" style="font-size:12px;margin-bottom:20px;color:#6666ff;"></div>
+      <button class="danger" id="btn-logout">Logout</button>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

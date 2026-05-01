@@ -3,7 +3,8 @@
   "name": "Curiosity Pointer",
   "version": "1.0",
   "description": "Alt+Click any heading for a 2-sentence AI summary. Stay focused.",
-  "permissions": ["activeTab", "tabs"],
+  "permissions": ["activeTab", "tabs", "storage"],
+  "options_page": "options.html",
   "host_permissions": [
     "https://curiosity-pointer-api.vercel.app/*"
   ],
