@@ -12,39 +12,59 @@ function buildTooltip() {
   const style = document.createElement('style');
   style.textContent = `
     .box {
-      background: #0f0f1a;
-      color: #e2e2e2;
-      border: 1px solid #7c3aed;
-      border-radius: 10px;
+      background: #03030f;
+      color: #b8b8ff;
+      border: 1px solid #4a4aff;
+      border-radius: 2px;
       padding: 14px 16px;
       max-width: 300px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 13px;
-      line-height: 1.6;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      box-shadow:
+        0 0 0 1px #1a1a6e,
+        0 0 16px rgba(80, 80, 255, 0.35),
+        0 0 40px rgba(50, 50, 200, 0.12),
+        inset 0 0 20px rgba(0, 0, 40, 0.6);
       pointer-events: auto;
+      letter-spacing: 0.03em;
     }
     .label {
       font-size: 10px;
-      color: #7c3aed;
+      color: #6666ff;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.25em;
       margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #1e1e6e;
     }
     .close {
       float: right;
       background: none;
-      border: none;
-      color: #555;
+      border: 1px solid #3333aa;
+      color: #5555cc;
       cursor: pointer;
-      font-size: 18px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
       line-height: 1;
-      padding: 0 0 0 8px;
+      padding: 2px 5px;
+      margin-left: 8px;
       margin-top: -2px;
     }
-    .close:hover { color: #e2e2e2; }
-    .loading { color: #666; font-style: italic; }
+    .close:hover {
+      color: #ffffff;
+      background: #2222aa;
+      border-color: #8888ff;
+    }
+    .loading {
+      color: #3a3a99;
+      animation: cp-pulse 1.2s step-end infinite;
+    }
+    @keyframes cp-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
   `;
 
   const box = document.createElement('div');
@@ -88,12 +108,44 @@ function show(x, y) {
 
 function update(text) {
   if (!tooltipHost) return;
-  renderContent(`<div>${text}</div>`);
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'close';
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', hide);
+
+  const label = document.createElement('div');
+  label.className = 'label';
+  label.textContent = 'Curiosity Pointer';
+
+  const body = document.createElement('div');
+  body.textContent = text;
+
+  tooltipBox.innerHTML = '';
+  tooltipBox.appendChild(closeBtn);
+  tooltipBox.appendChild(label);
+  tooltipBox.appendChild(body);
 }
 
 function hide() {
   if (tooltipHost) tooltipHost.style.display = 'none';
 }
+
+let pendingTimer = null;
+
+function askGemini(text, x, y) {
+  show(x, y);
+  clearTimeout(pendingTimer);
+  pendingTimer = setTimeout(() => update('Timed out. Try again.'), 20000);
+  chrome.runtime.sendMessage({ action: 'explain', text });
+}
+
+// Receive result pushed back from background
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action !== 'result') return;
+  clearTimeout(pendingTimer);
+  if (message.result) update(message.result);
+  else update('Error: ' + (message.error ?? 'unknown'));
+});
 
 function attachHeader(el) {
   if (el.dataset.cpAttached) return;
@@ -109,20 +161,7 @@ function attachHeader(el) {
 
     const text = el.innerText.trim();
     if (!text) return;
-
-    show(e.clientX, e.clientY);
-
-    chrome.runtime.sendMessage({ action: 'explain', text }, (response) => {
-      if (chrome.runtime.lastError) {
-        update('Extension error. Try reloading page.');
-        return;
-      }
-      if (response?.result) {
-        update(response.result);
-      } else {
-        update('Error: ' + (response?.error ?? 'unknown'));
-      }
-    });
+    askGemini(text, e.clientX, e.clientY);
   });
 }
 
@@ -149,12 +188,7 @@ document.addEventListener('click', (e) => {
   const selection = window.getSelection()?.toString().trim();
   if (!selection || selection.length < 10) return;
   e.preventDefault();
-  show(e.clientX, e.clientY);
-  chrome.runtime.sendMessage({ action: 'explain', text: selection }, (response) => {
-    if (chrome.runtime.lastError) { update('Extension error. Try reloading page.'); return; }
-    if (response?.result) update(response.result);
-    else update('Error: ' + (response?.error ?? 'unknown'));
-  });
+  askGemini(selection, e.clientX, e.clientY);
 });
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });

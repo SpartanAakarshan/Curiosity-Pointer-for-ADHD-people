@@ -4,6 +4,6 @@ body.curiosity-mode h3,
 body.curiosity-mode b,
 body.curiosity-mode strong {
   cursor: crosshair !important;
-  outline: 1px dashed rgba(124, 58, 237, 0.4);
-  outline-offset: 2px;
+  outline: 1px solid rgba(74, 74, 255, 0.5);
+  outline-offset: 3px;
 }
