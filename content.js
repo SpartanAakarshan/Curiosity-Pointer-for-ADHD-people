@@ -5,7 +5,7 @@ let tooltipBox = null;
 function buildTooltip() {
   const host = document.createElement('div');
   host.id = 'curiosity-pointer-host';
-  host.style.cssText = 'position:fixed;z-index:2147483647;display:none;pointer-events:none;';
+  host.style.cssText = 'position:absolute;z-index:2147483647;display:none;pointer-events:none;';
 
   const shadow = host.attachShadow({ mode: 'closed' });
 
@@ -86,23 +86,34 @@ function positionTooltip(x, y) {
   let top = y + 14;
   if (left + 320 > vw) left = x - 320;
   if (top + 140 > vh) top = y - 140;
-  tooltipHost.style.left = Math.max(8, left) + 'px';
-  tooltipHost.style.top = Math.max(8, top) + 'px';
+  tooltipHost.style.left = Math.max(8, left + window.scrollX) + 'px';
+  tooltipHost.style.top = Math.max(8, top + window.scrollY) + 'px';
 }
 
-function renderContent(html) {
-  tooltipBox.innerHTML = `
-    <button class="close" id="cp-close">×</button>
-    <div class="label">Curiosity Pointer</div>
-    ${html}
-  `;
-  tooltipShadow.getElementById('cp-close').addEventListener('click', hide);
+function showLoading() {
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'close';
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', hide);
+
+  const label = document.createElement('div');
+  label.className = 'label';
+  label.textContent = 'Curiosity Pointer';
+
+  const loading = document.createElement('span');
+  loading.className = 'loading';
+  loading.textContent = 'Asking Gemini…';
+
+  tooltipBox.innerHTML = '';
+  tooltipBox.appendChild(closeBtn);
+  tooltipBox.appendChild(label);
+  tooltipBox.appendChild(loading);
 }
 
 function show(x, y) {
   if (!tooltipHost) buildTooltip();
   positionTooltip(x, y);
-  renderContent('<span class="loading">Asking Gemini…</span>');
+  showLoading();
   tooltipHost.style.display = 'block';
 }
 
@@ -161,10 +172,11 @@ function hide() {
 let pendingTimer = null;
 
 function askGemini(text, x, y) {
+  const trimmed = text.slice(0, 2000);
   show(x, y);
   clearTimeout(pendingTimer);
   pendingTimer = setTimeout(() => update('Timed out. Try again.'), 20000);
-  chrome.runtime.sendMessage({ action: 'explain', text });
+  chrome.runtime.sendMessage({ action: 'explain', text: trimmed });
 }
 
 // Receive result pushed back from background

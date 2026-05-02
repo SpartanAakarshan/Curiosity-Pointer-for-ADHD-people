@@ -1,7 +1,30 @@
-const PROXY_URL = 'https://curiosity-pointer-api.vercel.app/api/explain';
+const PROXY_URL    = 'https://curiosity-pointer-api.vercel.app/api/explain';
+const REFRESH_URL  = 'https://krirwdkqjezbzyythioq.supabase.co/auth/v1/token?grant_type=refresh_token';
+const SUPABASE_ANON = 'sb_publishable_FjoiQluqAIe3hl3ufdWfaA_BJGr7e5b';
+
+async function refreshToken() {
+  const { refreshToken } = await chrome.storage.local.get('refreshToken');
+  if (!refreshToken) return null;
+
+  const r = await fetch(REFRESH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ refresh_token: refreshToken })
+  });
+
+  const data = await r.json();
+  if (!data.access_token) return null;
+
+  await chrome.storage.local.set({
+    token: data.access_token,
+    refreshToken: data.refresh_token
+  });
+
+  return data.access_token;
+}
 
 async function callProxy(text, retries = 1) {
-  const { token } = await chrome.storage.local.get('token');
+  let { token } = await chrome.storage.local.get('token');
 
   if (!token) {
     return { error: 'Not logged in. Open extension options to sign in.' };
@@ -16,10 +39,12 @@ async function callProxy(text, retries = 1) {
     body: JSON.stringify({ text })
   });
 
-  const data = await r.json();
-
   if (r.status === 401) {
-    await chrome.storage.local.remove(['token', 'email']);
+    const newToken = await refreshToken();
+    if (newToken && retries > 0) {
+      return callProxy(text, retries - 1);
+    }
+    await chrome.storage.local.remove(['token', 'email', 'refreshToken']);
     return { error: 'Session expired. Please log in again via extension options.' };
   }
 
@@ -28,7 +53,7 @@ async function callProxy(text, retries = 1) {
     return callProxy(text, retries - 1);
   }
 
-  return data;
+  return r.json();
 }
 
 chrome.runtime.onMessage.addListener((message, sender) => {

@@ -44,7 +44,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   const data = await supabaseFetch('token?grant_type=password', { email, password });
 
   if (data.access_token) {
-    await chrome.storage.local.set({ token: data.access_token, email });
+    await chrome.storage.local.set({ token: data.access_token, refreshToken: data.refresh_token, email });
     showStatus('Logged in.');
     checkSession();
   } else {
@@ -69,7 +69,7 @@ document.getElementById('btn-signup').addEventListener('click', async () => {
 });
 
 document.getElementById('btn-logout').addEventListener('click', async () => {
-  await chrome.storage.local.remove(['token', 'email']);
+  await chrome.storage.local.remove(['token', 'email', 'refreshToken']);
   showStatus('Logged out.');
   checkSession();
 });
