@@ -102,7 +102,7 @@ function showLoading() {
 
   const loading = document.createElement('span');
   loading.className = 'loading';
-  loading.textContent = 'Asking Gemini…';
+  loading.textContent = 'Finding…';
 
   tooltipBox.innerHTML = '';
   tooltipBox.appendChild(closeBtn);
