@@ -40,9 +40,9 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   callProxy(message.text)
     .then(data => {
       if (data.result) {
-        chrome.tabs.sendMessage(tabId, { action: 'result', result: data.result });
+        chrome.tabs.sendMessage(tabId, { action: 'result', result: data.result, remaining: data.remaining ?? null });
       } else {
-        chrome.tabs.sendMessage(tabId, { action: 'result', error: data.error ?? 'No response.' });
+        chrome.tabs.sendMessage(tabId, { action: 'result', error: data.error ?? 'No response.', message: data.message });
       }
     })
     .catch(err => chrome.tabs.sendMessage(tabId, { action: 'result', error: err.message }));

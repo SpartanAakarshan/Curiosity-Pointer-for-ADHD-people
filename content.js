@@ -106,8 +106,9 @@ function show(x, y) {
   tooltipHost.style.display = 'block';
 }
 
-function update(text) {
+function buildBox(labelText, bodyText, footerText = null, footerHref = null) {
   if (!tooltipHost) return;
+
   const closeBtn = document.createElement('button');
   closeBtn.className = 'close';
   closeBtn.textContent = '×';
@@ -115,15 +116,42 @@ function update(text) {
 
   const label = document.createElement('div');
   label.className = 'label';
-  label.textContent = 'Curiosity Pointer';
+  label.textContent = labelText;
 
   const body = document.createElement('div');
-  body.textContent = text;
+  body.textContent = bodyText;
 
   tooltipBox.innerHTML = '';
   tooltipBox.appendChild(closeBtn);
   tooltipBox.appendChild(label);
   tooltipBox.appendChild(body);
+
+  if (footerText) {
+    const footer = document.createElement('div');
+    footer.style.cssText = 'margin-top:8px;font-size:10px;color:#3a3a99;';
+    if (footerHref) {
+      const a = document.createElement('a');
+      a.href = footerHref;
+      a.target = '_blank';
+      a.textContent = footerText;
+      a.style.cssText = 'color:#6666ff;text-decoration:none;';
+      footer.appendChild(a);
+    } else {
+      footer.textContent = footerText;
+    }
+    tooltipBox.appendChild(footer);
+  }
+}
+
+function update(text, remaining = null) {
+  const footer = remaining !== null && remaining <= 3
+    ? `${remaining} free search${remaining === 1 ? '' : 'es'} left — upgrade for $5/mo`
+    : null;
+  buildBox('Curiosity Pointer', text, footer);
+}
+
+function updateUpgrade(message) {
+  buildBox('Upgrade Required', message, 'Get unlimited access →', 'https://curiosity-pointer-api.vercel.app/upgrade');
 }
 
 function hide() {
@@ -143,8 +171,13 @@ function askGemini(text, x, y) {
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action !== 'result') return;
   clearTimeout(pendingTimer);
-  if (message.result) update(message.result);
-  else update('Error: ' + (message.error ?? 'unknown'));
+  if (message.error === 'UPGRADE_REQUIRED') {
+    updateUpgrade(message.message);
+  } else if (message.result) {
+    update(message.result, message.remaining);
+  } else {
+    update('Error: ' + (message.error ?? 'unknown'));
+  }
 });
 
 function attachHeader(el) {
