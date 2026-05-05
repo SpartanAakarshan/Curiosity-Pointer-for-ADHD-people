@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Curiosity Pointer",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Alt+Click any heading for a 2-sentence AI summary. Stay focused.",
   "permissions": ["activeTab", "storage"],
   "options_page": "options.html",
