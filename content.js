@@ -300,3 +300,13 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); })
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) document.body.classList.remove('curiosity-mode');
 });
+
+// Hide on SPA navigation (Reddit, YouTube, etc.)
+window.addEventListener('popstate', hide);
+(['pushState', 'replaceState']).forEach(method => {
+  const orig = history[method];
+  history[method] = function (...args) {
+    orig.apply(this, args);
+    hide();
+  };
+});
