@@ -14,7 +14,7 @@ function buildTooltip() {
     .box {
       background: #03030f;
       color: #b8b8ff;
-      border: 1px solid #4a4aff;
+      border: 2px solid #8888ff;
       border-radius: 2px;
       padding: 14px 16px;
       max-width: 300px;
@@ -64,6 +64,9 @@ function buildTooltip() {
     @keyframes cp-pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
+    }
+    .lost-signal {
+      color: #cc4444;
     }
   `;
 
@@ -165,17 +168,57 @@ function updateUpgrade(message) {
   buildBox('Upgrade Required', message, 'Get unlimited access →', 'https://curiosity-pointer-api.vercel.app/upgrade');
 }
 
+function updateError(msg) {
+  buildBox('// Lost Signal', msg);
+  const label = tooltipShadow.querySelector('.label');
+  if (label) {
+    label.style.color = '#cc4444';
+    label.style.borderBottomColor = '#6e1e1e';
+  }
+  const body = tooltipShadow.querySelector('.box div:last-child');
+  if (body) body.className = 'lost-signal';
+}
+
 function hide() {
   if (tooltipHost) tooltipHost.style.display = 'none';
 }
 
 let pendingTimer = null;
+let lastQueriedKey = null;
 
-function askGemini(text, x, y) {
+async function askGemini(text, x, y) {
   const trimmed = text.slice(0, 2000);
+  const cacheKey = trimmed.toLowerCase().replace(/\s+/g, ' ');
+
+  if (!navigator.onLine) {
+    show(x, y);
+    updateError('No signal. Check connection and try again.');
+    return;
+  }
+
+  const { cpCache = [] } = await chrome.storage.local.get('cpCache');
+  const hit = cpCache.find(e => e.key === cacheKey);
+  if (hit) {
+    show(x, y);
+    update(hit.result);
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { cpDaily = { date: '', count: 0 } } = await chrome.storage.local.get('cpDaily');
+  const daily = cpDaily.date === today ? cpDaily : { date: today, count: 0 };
+  if (daily.count >= 20) {
+    show(x, y);
+    updateUpgrade('Daily limit of 20 free searches reached. Upgrade for $5/month.');
+    return;
+  }
+
+  await chrome.storage.local.set({ cpDaily: { date: today, count: daily.count + 1 } });
+
+  lastQueriedKey = cacheKey;
   show(x, y);
   clearTimeout(pendingTimer);
-  pendingTimer = setTimeout(() => update('Timed out. Try again.'), 20000);
+  pendingTimer = setTimeout(() => updateError('Request timed out. Try again.'), 20000);
   chrome.runtime.sendMessage({ action: 'explain', text: trimmed });
 }
 
@@ -187,8 +230,16 @@ chrome.runtime.onMessage.addListener((message) => {
     updateUpgrade(message.message);
   } else if (message.result) {
     update(message.result, message.remaining);
+    if (lastQueriedKey) {
+      chrome.storage.local.get('cpCache').then(({ cpCache = [] }) => {
+        const next = cpCache.filter(e => e.key !== lastQueriedKey).slice(-4);
+        next.push({ key: lastQueriedKey, result: message.result });
+        chrome.storage.local.set({ cpCache: next });
+      });
+      lastQueriedKey = null;
+    }
   } else {
-    update('Error: ' + (message.error ?? 'unknown'));
+    updateError(message.error ?? 'Unknown error.');
   }
 });
 
@@ -204,7 +255,7 @@ function attachHeader(el) {
     e.preventDefault();
     e.stopPropagation();
 
-    const text = el.innerText.trim();
+    const text = el.innerText.trim().slice(0, 100);
     if (!text) return;
     askGemini(text, e.clientX, e.clientY);
   });
@@ -212,8 +263,15 @@ function attachHeader(el) {
 
 const SELECTOR = 'h1, h2, h3, b, strong';
 
-// Initial scan
-document.querySelectorAll(SELECTOR).forEach(attachHeader);
+function scanRoot(root) {
+  root.querySelectorAll(SELECTOR).forEach(attachHeader);
+  root.querySelectorAll('*').forEach(el => {
+    if (el.shadowRoot) scanRoot(el.shadowRoot);
+  });
+}
+
+// Initial scan including shadow trees
+scanRoot(document);
 
 // SPA support — catch elements added after load
 const observer = new MutationObserver((mutations) => {
@@ -222,6 +280,7 @@ const observer = new MutationObserver((mutations) => {
       if (node.nodeType !== 1) continue;
       if (/^(H[123]|B|STRONG)$/.test(node.tagName)) attachHeader(node);
       node.querySelectorAll?.(SELECTOR).forEach(attachHeader);
+      if (node.shadowRoot) scanRoot(node.shadowRoot);
     }
   }
 });
@@ -237,3 +296,7 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) document.body.classList.remove('curiosity-mode');
+});
