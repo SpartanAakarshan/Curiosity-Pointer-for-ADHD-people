@@ -53,6 +53,8 @@ async function callProxy(text, retries = 1) {
     return callProxy(text, retries - 1);
   }
 
+  if (!r.ok) return { error: `Server error (${r.status})` };
+
   return r.json();
 }
 
@@ -62,13 +64,14 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   const tabId = sender.tab?.id;
   if (!tabId) return;
 
+  const { requestId } = message;
   callProxy(message.text)
     .then(data => {
       if (data.result) {
-        chrome.tabs.sendMessage(tabId, { action: 'result', result: data.result, remaining: data.remaining ?? null });
+        chrome.tabs.sendMessage(tabId, { action: 'result', result: data.result, remaining: data.remaining ?? null, requestId });
       } else {
-        chrome.tabs.sendMessage(tabId, { action: 'result', error: data.error ?? 'No response.', message: data.message });
+        chrome.tabs.sendMessage(tabId, { action: 'result', error: data.error ?? 'No response.', message: data.message, requestId });
       }
     })
-    .catch(err => chrome.tabs.sendMessage(tabId, { action: 'result', error: err.message }));
+    .catch(err => chrome.tabs.sendMessage(tabId, { action: 'result', error: err.message, requestId }));
 });

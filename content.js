@@ -147,6 +147,7 @@ function buildBox(labelText, bodyText, footerText = null, footerHref = null) {
       const a = document.createElement('a');
       a.href = footerHref;
       a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       a.textContent = footerText;
       a.style.cssText = 'color:#6666ff;text-decoration:none;';
       footer.appendChild(a);
@@ -184,7 +185,7 @@ function hide() {
 }
 
 let pendingTimer = null;
-let lastQueriedKey = null;
+const pendingRequests = new Map(); // requestId → cacheKey
 
 async function askGemini(text, x, y) {
   const trimmed = text.slice(0, 2000);
@@ -197,7 +198,8 @@ async function askGemini(text, x, y) {
   }
 
   const { cpCache = [] } = await chrome.storage.local.get('cpCache');
-  const hit = cpCache.find(e => e.key === cacheKey);
+  const now = Date.now();
+  const hit = cpCache.find(e => e.key === cacheKey && (now - (e.ts ?? 0)) < 86400000);
   if (hit) {
     show(x, y);
     update(hit.result);
@@ -215,11 +217,23 @@ async function askGemini(text, x, y) {
 
   await chrome.storage.local.set({ cpDaily: { date: today, count: daily.count + 1 } });
 
-  lastQueriedKey = cacheKey;
+  const requestId = Math.random().toString(36).slice(2);
+  pendingRequests.set(requestId, cacheKey);
+
   show(x, y);
   clearTimeout(pendingTimer);
-  pendingTimer = setTimeout(() => updateError('Request timed out. Try again.'), 20000);
-  chrome.runtime.sendMessage({ action: 'explain', text: trimmed });
+  pendingTimer = setTimeout(() => {
+    pendingRequests.delete(requestId);
+    updateError('Request timed out. Try again.');
+  }, 20000);
+
+  try {
+    chrome.runtime.sendMessage({ action: 'explain', text: trimmed, requestId });
+  } catch {
+    pendingRequests.delete(requestId);
+    clearTimeout(pendingTimer);
+    updateError('Extension updated. Reload the page.');
+  }
 }
 
 // Receive result pushed back from background
@@ -230,13 +244,14 @@ chrome.runtime.onMessage.addListener((message) => {
     updateUpgrade(message.message);
   } else if (message.result) {
     update(message.result, message.remaining);
-    if (lastQueriedKey) {
+    const cacheKey = pendingRequests.get(message.requestId);
+    if (cacheKey) {
+      pendingRequests.delete(message.requestId);
       chrome.storage.local.get('cpCache').then(({ cpCache = [] }) => {
-        const next = cpCache.filter(e => e.key !== lastQueriedKey).slice(-4);
-        next.push({ key: lastQueriedKey, result: message.result });
+        const next = cpCache.filter(e => e.key !== cacheKey).slice(-4);
+        next.push({ key: cacheKey, result: message.result, ts: Date.now() });
         chrome.storage.local.set({ cpCache: next });
       });
-      lastQueriedKey = null;
     }
   } else {
     updateError(message.error ?? 'Unknown error.');
