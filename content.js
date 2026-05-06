@@ -160,9 +160,10 @@ function buildBox(labelText, bodyText, footerText = null, footerHref = null) {
 
 function update(text, remaining = null) {
   const footer = remaining !== null && remaining <= 3
-    ? `${remaining} free search${remaining === 1 ? '' : 'es'} left — upgrade for $5/mo`
+    ? `${remaining} free search${remaining === 1 ? '' : 'es'} left — upgrade for ₹200/mo`
     : null;
-  buildBox('Curiosity Pointer', text, footer);
+  const footerHref = footer ? 'https://curiosity-pointer-api.vercel.app/upgrade' : null;
+  buildBox('Curiosity Pointer', text, footer, footerHref);
 }
 
 function updateUpgrade(message) {
@@ -182,6 +183,7 @@ function updateError(msg) {
 
 function hide() {
   if (tooltipHost) tooltipHost.style.display = 'none';
+  clearTimeout(pendingTimer);
 }
 
 let pendingTimer = null;
@@ -211,7 +213,7 @@ async function askGemini(text, x, y) {
   const daily = cpDaily.date === today ? cpDaily : { date: today, count: 0 };
   if (daily.count >= 20) {
     show(x, y);
-    updateUpgrade('Daily limit of 20 free searches reached. Upgrade for $5/month.');
+    updateUpgrade('Daily limit of 20 free searches reached. Upgrade for ₹200/month.');
     return;
   }
 

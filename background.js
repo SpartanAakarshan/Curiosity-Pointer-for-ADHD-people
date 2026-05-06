@@ -12,6 +12,7 @@ async function refreshToken() {
     body: JSON.stringify({ refresh_token: refreshToken })
   });
 
+  if (!r.ok) return null;
   const data = await r.json();
   if (!data.access_token) return null;
 
