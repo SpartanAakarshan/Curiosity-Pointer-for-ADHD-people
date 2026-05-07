@@ -23,6 +23,20 @@ async function supabaseFetch(path, body) {
   return res.json();
 }
 
+document.getElementById('show-signup').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('signup-view').style.display = 'block';
+  status.textContent = '';
+});
+
+document.getElementById('show-login').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('signup-view').style.display = 'none';
+  document.getElementById('login-view').style.display = 'block';
+  status.textContent = '';
+});
+
 async function checkSession() {
   const { token, email } = await chrome.storage.local.get(['token', 'email']);
   if (token) {
@@ -62,7 +76,9 @@ document.getElementById('btn-signup').addEventListener('click', async () => {
   const data = await supabaseFetch('signup', { email, password });
 
   if (data.id) {
-    showStatus('Account created. Check email to confirm, then log in.');
+    showStatus('Account created. Check your email for a confirmation link, then come back and log in.');
+    document.getElementById('signup-view').style.display = 'none';
+    document.getElementById('login-view').style.display = 'block';
   } else {
     showStatus(data.error_description ?? 'Signup failed.', true);
   }

@@ -103,9 +103,25 @@
       <input type="email" id="email" placeholder="user@example.com" />
       <label>Password</label>
       <input type="password" id="password" placeholder="••••••••" />
-      <div class="btn-row">
-        <button class="primary" id="btn-login">Login</button>
-        <button id="btn-signup">Sign Up</button>
+
+      <div id="login-view">
+        <div class="btn-row">
+          <button class="primary" id="btn-login">Login</button>
+        </div>
+        <div style="margin-top:14px;font-size:10px;text-align:center;">
+          <span style="color:#3a3a88;">No account?</span>
+          <a id="show-signup" href="#" style="color:#6666ff;text-decoration:none;letter-spacing:0.05em;margin-left:6px;">Create one</a>
+        </div>
+      </div>
+
+      <div id="signup-view" style="display:none;">
+        <div class="btn-row">
+          <button id="btn-signup">Create Account</button>
+        </div>
+        <div style="margin-top:14px;font-size:10px;text-align:center;">
+          <span style="color:#3a3a88;">Already have one?</span>
+          <a id="show-login" href="#" style="color:#6666ff;text-decoration:none;letter-spacing:0.05em;margin-left:6px;">Log in</a>
+        </div>
       </div>
     </div>
 
