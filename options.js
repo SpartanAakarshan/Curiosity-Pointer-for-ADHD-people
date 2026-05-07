@@ -61,6 +61,16 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     await chrome.storage.local.set({ token: data.access_token, refreshToken: data.refresh_token, email });
     showStatus('Logged in.');
     checkSession();
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, { action: 'ping' }, (response) => {
+          if (chrome.runtime.lastError || !response) {
+            chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => {});
+            chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] }).catch(() => {});
+          }
+        });
+      });
+    });
   } else {
     showStatus(data.error_description ?? 'Login failed.', true);
   }

@@ -3,7 +3,7 @@
   "name": "Curiosity Pointer",
   "version": "1.1",
   "description": "Alt+Click any heading for a 2-sentence AI summary. Stay focused.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "scripting"],
   "options_page": "options.html",
   "icons": { "128": "icon128.png" },
   "action": { "default_icon": { "128": "icon128.png" } },

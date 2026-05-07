@@ -238,6 +238,10 @@ async function askGemini(text, x, y) {
   }
 }
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'ping') { sendResponse({ ok: true }); return true; }
+});
+
 // Receive result pushed back from background
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action !== 'result') return;
