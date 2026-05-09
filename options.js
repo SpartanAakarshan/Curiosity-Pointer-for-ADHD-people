@@ -23,20 +23,6 @@ async function supabaseFetch(path, body) {
   return res.json();
 }
 
-document.getElementById('show-signup').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('login-view').style.display = 'none';
-  document.getElementById('signup-view').style.display = 'block';
-  status.textContent = '';
-});
-
-document.getElementById('show-login').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('signup-view').style.display = 'none';
-  document.getElementById('login-view').style.display = 'block';
-  status.textContent = '';
-});
-
 async function checkSession() {
   const { token, email } = await chrome.storage.local.get(['token', 'email']);
   if (token) {
@@ -49,48 +35,48 @@ async function checkSession() {
   }
 }
 
-document.getElementById('btn-login').addEventListener('click', async () => {
-  const email    = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  if (!email || !password) return showStatus('Email and password required.', true);
-
-  showStatus('Logging in…');
-  const data = await supabaseFetch('token?grant_type=password', { email, password });
-
-  if (data.access_token) {
-    await chrome.storage.local.set({ token: data.access_token, refreshToken: data.refresh_token, email });
-    showStatus('Logged in.');
-    checkSession();
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach(tab => {
-        chrome.tabs.sendMessage(tab.id, { action: 'ping' }, (response) => {
-          if (chrome.runtime.lastError || !response) {
-            chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => {});
-            chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] }).catch(() => {});
-          }
-        });
+function injectContent() {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id, { action: 'ping' }, (response) => {
+        if (chrome.runtime.lastError || !response) {
+          chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => {});
+          chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] }).catch(() => {});
+        }
       });
     });
-  } else {
-    showStatus(data.error_description ?? 'Login failed.', true);
-  }
-});
+  });
+}
 
-document.getElementById('btn-signup').addEventListener('click', async () => {
+document.getElementById('btn-continue').addEventListener('click', async () => {
   const email    = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   if (!email || !password) return showStatus('Email and password required.', true);
   if (password.length < 8) return showStatus('Password must be 8+ characters.', true);
 
-  showStatus('Creating account…');
-  const data = await supabaseFetch('signup', { email, password });
+  showStatus('Signing in…');
+  const login = await supabaseFetch('token?grant_type=password', { email, password });
 
-  if (data.id) {
-    showStatus('Account created. Check your email for a confirmation link, then come back and log in.');
-    document.getElementById('signup-view').style.display = 'none';
-    document.getElementById('login-view').style.display = 'block';
+  if (login.access_token) {
+    await chrome.storage.local.set({ token: login.access_token, refreshToken: login.refresh_token, email });
+    showStatus('Logged in.');
+    checkSession();
+    injectContent();
+    return;
+  }
+
+  // New user — auto-create account
+  showStatus('Creating account…');
+  const signup = await supabaseFetch('signup', { email, password });
+
+  if (signup.access_token) {
+    await chrome.storage.local.set({ token: signup.access_token, refreshToken: signup.refresh_token, email });
+    showStatus('Account created. Logged in.');
+    checkSession();
+    injectContent();
   } else {
-    showStatus(data.error_description ?? 'Signup failed.', true);
+    const err = signup.error_description ?? signup.msg ?? signup.message ?? login.error_description ?? login.msg ?? login.message ?? 'Sign in failed.';
+    showStatus(err, true);
   }
 });
 

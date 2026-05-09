@@ -49,6 +49,13 @@ async function callProxy(text, retries = 1) {
     return { error: 'Session expired. Please log in again via extension options.' };
   }
 
+  if (r.status === 403) {
+    let detail = '';
+    try { detail = await r.text(); } catch { /* ignore */ }
+    console.error('[CuriosityPointer] 403 body:', detail);
+    return { error: `Access denied (403). ${detail || 'Check extension permissions or re-login.'}` };
+  }
+
   if (r.status === 503 && retries > 0) {
     await new Promise(res => setTimeout(res, 3000));
     return callProxy(text, retries - 1);

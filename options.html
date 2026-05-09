@@ -59,25 +59,22 @@
 
     input:focus { border-color: #4a4aff; }
 
-    .btn-row { display: flex; gap: 10px; margin-top: 4px; }
-
     button {
-      flex: 1;
-      background: none;
-      border: 1px solid #4a4aff;
-      color: #6666ff;
+      width: 100%;
+      background: #1a1a6e;
+      border: 1px solid #6666ff;
+      color: #b8b8ff;
       font-family: 'Courier New', Courier, monospace;
       font-size: 11px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       padding: 9px;
       cursor: pointer;
+      margin-top: 4px;
     }
 
-    button:hover { background: #111144; color: #ffffff; }
-    button.primary { background: #1a1a6e; color: #b8b8ff; border-color: #6666ff; }
-    button.primary:hover { background: #2a2a99; }
-    button.danger { border-color: #aa2222; color: #cc4444; }
+    button:hover { background: #2a2a99; }
+    button.danger { background: none; border-color: #aa2222; color: #cc4444; margin-top: 0; }
     button.danger:hover { background: #2a0808; }
 
     #status {
@@ -103,26 +100,7 @@
       <input type="email" id="email" placeholder="user@example.com" />
       <label>Password</label>
       <input type="password" id="password" placeholder="••••••••" />
-
-      <div id="login-view">
-        <div class="btn-row">
-          <button class="primary" id="btn-login">Login</button>
-        </div>
-        <div style="margin-top:14px;font-size:10px;text-align:center;">
-          <span style="color:#3a3a88;">No account?</span>
-          <a id="show-signup" href="#" style="color:#6666ff;text-decoration:none;letter-spacing:0.05em;margin-left:6px;">Create one</a>
-        </div>
-      </div>
-
-      <div id="signup-view" style="display:none;">
-        <div class="btn-row">
-          <button id="btn-signup">Create Account</button>
-        </div>
-        <div style="margin-top:14px;font-size:10px;text-align:center;">
-          <span style="color:#3a3a88;">Already have one?</span>
-          <a id="show-login" href="#" style="color:#6666ff;text-decoration:none;letter-spacing:0.05em;margin-left:6px;">Log in</a>
-        </div>
-      </div>
+      <button id="btn-continue">Continue</button>
     </div>
 
     <div id="logged-in">
